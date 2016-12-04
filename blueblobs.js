@@ -1,3 +1,4 @@
+"use strict";
 $(document).ready(function () {
   var canvas = $("canvas.MainGame")[0];
   var context = canvas.getContext("2d");
@@ -14,15 +15,21 @@ var Game = function (context, canvas){
 
   //REMEBER: If I use origin, then I'm moving relative to new coordinates
   this.origin = {x: (canvas.width/2 + 0.5) | 0, y: (canvas.width/2 + 0.5) | 0};
-  this.context.fillStyle = "rgb(200,0,100)";
-  this.context.strokeStyle = "rgb(200, 0, 100)";
-  this.context.lineWidth = 5;
+  this.xIncrementNumber = 20;
+  //Add half, force to integer.
+  this.xIncrementSize = (this.canvas.width / this.xIncrementNumber + 0.5) | 0;
+
+  this.yIncrementNumber = 20;
+  this.yIncrementSize = (this.canvas.width / this.yIncrementNumber + 0.5) | 0;
+
+  this._drawGrid();
   this._drawAxises();
+  this._drawIncrements();
 };
 
-Game.prototype._drawAxises = function (){
-
+Game.prototype._drawAxises = function () {
   this.context.beginPath();
+
   //draw x axis
   this.context.moveTo(0, this.origin.y);
   this.context.lineTo((this.canvas.width + 0.5) | 0, this.origin.y);
@@ -31,5 +38,104 @@ Game.prototype._drawAxises = function (){
   this.context.moveTo(this.origin.x, 0);
   this.context.lineTo(this.origin.x, (this.canvas.height + 0.5) | 0);
 
+  this.context.strokeStyle = "rgb(200, 0, 100)";
+  this.context.lineWidth = 5;
+  this.context.stroke();
+};
+
+Game.prototype._drawIncrements = function () {
+
+
+
+  this.context.beginPath();
+
+  var drawXIntervalPosition = this.origin.x;
+
+  while ( drawXIntervalPosition < this.canvas.width ) {
+    this.context.moveTo( drawXIntervalPosition,
+      this.origin.y - this.yIncrementSize );
+    this.context.lineTo( drawXIntervalPosition,
+      this.origin.y + this.yIncrementSize );
+
+    drawXIntervalPosition += this.xIncrementSize;
+  }
+
+  drawXIntervalPosition = this.origin.x;
+
+  while ( drawXIntervalPosition > 0 ) {
+    this.context.moveTo( drawXIntervalPosition,
+      this.origin.y - this.yIncrementSize );
+    this.context.lineTo( drawXIntervalPosition,
+      this.origin.y + this.yIncrementSize );
+
+    drawXIntervalPosition -= this.xIncrementSize;
+  }
+  var drawYIntervalPosition = this.origin.y;
+
+  while ( drawYIntervalPosition < this.canvas.height ) {
+    this.context.moveTo( this.origin.x - this.xIncrementSize,
+      drawYIntervalPosition );
+    this.context.lineTo( this.origin.x + this.xIncrementSize,
+      drawYIntervalPosition );
+
+    drawYIntervalPosition += this.yIncrementSize;
+  }
+
+  var drawYIntervalPosition = this.origin.y;
+
+  while ( drawYIntervalPosition > 0 ) {
+    this.context.moveTo( this.origin.x - this.xIncrementSize,
+       drawYIntervalPosition );
+    this.context.lineTo( this.origin.x + this.xIncrementSize,
+       drawYIntervalPosition );
+
+    drawYIntervalPosition -= this.yIncrementSize;
+  }
+
+  this.context.strokeStyle = "rgb(200, 0, 100)";
+  this.context.lineWidth = 3;
+  this.context.stroke();
+};
+
+Game.prototype._drawGrid = function () {
+
+  this.context.beginPath();
+
+  var drawXIntervalPosition = this.origin.x;
+  while ( drawXIntervalPosition < this.canvas.width ) {
+    this.context.moveTo( drawXIntervalPosition, 0 );
+    this.context.lineTo( drawXIntervalPosition, this.canvas.height );
+
+
+    drawXIntervalPosition += this.xIncrementSize;
+  }
+
+  drawXIntervalPosition = this.origin.x;
+  while ( drawXIntervalPosition > 0 ) {
+    this.context.moveTo( drawXIntervalPosition, 0 );
+    this.context.lineTo( drawXIntervalPosition, this.canvas.height );
+
+    drawXIntervalPosition -= this.xIncrementSize;
+  }
+
+  var drawXIntervalPosition = this.origin.x;
+  while ( drawXIntervalPosition < this.canvas.width ) {
+    this.context.moveTo( 0, drawXIntervalPosition);
+    this.context.lineTo( this.canvas.height, drawXIntervalPosition );
+
+
+    drawXIntervalPosition += this.xIncrementSize;
+  }
+
+  drawXIntervalPosition = this.origin.x;
+  while ( drawXIntervalPosition > 0 ) {
+    this.context.moveTo( 0, drawXIntervalPosition );
+    this.context.lineTo( this.canvas.height, drawXIntervalPosition );
+
+    drawXIntervalPosition -= this.xIncrementSize;
+  }
+
+  this.context.strokeStyle = "rgb(100, 0, 50)";
+  this.context.lineWidth = 1;
   this.context.stroke();
 };
