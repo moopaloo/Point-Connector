@@ -11,3 +11,19 @@ Blob.prototype.hasHit = function ( checkX, checkY ) {
 
   return (pointDistance < this.radius);
 };
+
+var GameState = function () {
+  this._blobs = [];
+};
+
+GameState.prototype.createBlobs = function (coordinateList) {
+  debugger;
+  if (this._blobs.length > 0) throw "Blobs are already created.";
+  if ( !(coordinateList instanceof Array) )
+    throw "coordinateList must be array.";
+  if (coordinateList.length === 0) throw "coordinateList must not be empty.";
+};
+
+GameState.prototype.destroyBlobs = function () {
+  this._blobs = [];
+};

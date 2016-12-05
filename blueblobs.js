@@ -2,10 +2,10 @@
 $(document).ready(function () {
   var canvas = $("canvas.MainGame")[0];
   var context = canvas.getContext("2d");
-  var gameInstance = new Game(context, canvas);
+  var gameInstance = new GameUI(context, canvas);
 });
 
-var Game = function (context, canvas){
+var GameUI = function (context, canvas){
   this.context = context;
   this.canvas = canvas;
 
@@ -22,12 +22,16 @@ var Game = function (context, canvas){
   this.yIncrementNumber = 20;
   this.yIncrementSize = (this.canvas.width / this.yIncrementNumber + 0.5) | 0;
 
+  this.gameState = new GameState();
+
   this._drawGrid();
   this._drawAxises();
   this._drawIncrements();
+
+  this._drawBlobs();
 };
 
-Game.prototype._drawAxises = function () {
+GameUI.prototype._drawAxises = function () {
   this.context.beginPath();
 
   //draw x axis
@@ -43,9 +47,7 @@ Game.prototype._drawAxises = function () {
   this.context.stroke();
 };
 
-Game.prototype._drawIncrements = function () {
-
-
+GameUI.prototype._drawIncrements = function () {
 
   this.context.beginPath();
 
@@ -97,7 +99,7 @@ Game.prototype._drawIncrements = function () {
   this.context.stroke();
 };
 
-Game.prototype._drawGrid = function () {
+GameUI.prototype._drawGrid = function () {
 
   this.context.beginPath();
 
@@ -138,4 +140,8 @@ Game.prototype._drawGrid = function () {
   this.context.strokeStyle = "rgb(100, 0, 50)";
   this.context.lineWidth = 1;
   this.context.stroke();
+};
+
+GameUI.prototype._drawBlobs = function () {
+
 };
