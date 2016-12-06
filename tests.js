@@ -50,7 +50,7 @@ QUnit.test (
 QUnit.test(
   "GameState blobs creation and destruction" ,
   function( assert ){
-    var gameState = new GameState();
+    var gameState = new GameState({minX: -1, maxX: 0, minY: -1, maxY: 0});
 
     assert.throws( function(){gameState.createBlobs("Not array")},
     /coordinateList must be array/,
@@ -84,7 +84,7 @@ QUnit.test(
 QUnit.test(
   "GameState.setWindow(): Validates and sets the graph window",
   function( assert ){
-    var gameState = new GameState();
+    var gameState = new GameState({minX: -1, maxX: 0, minY: -1, maxY: 0});
       assert.throws(
         function () {
         gameState.setWindow({minX: -15, maxX: 0, minY: 11, maxY: -5});
@@ -106,11 +106,18 @@ QUnit.test(
         /minX must be less than maxX and minY must be less than maxY/
       );
 
+      assert.throws(
+        function () {gameState.setWindow({mix:10});},
+        new RegExp("Not correct properties on window object\\." +
+        " Check types and that you have minX, maxX, minY, maxY\\.")
+      );
+
       gameState.setWindow({minX: -15, maxX: 0, minY: -11, maxY: -5});
       assert.deepEqual(
         gameState._graphWindow,
         {minX: -15, maxX: 0, minY: -11, maxY: -5},
       "graph window is set on gameState object");
+
   }
 );
 
@@ -118,7 +125,7 @@ QUnit.test(
 QUnit.test(
   "GameState.createRandomBlobs(): creates random blobs",
   function( assert ){
-    var gameState = new GameState();
+    var gameState = new GameState({minX: -1, maxX: 0, minY: -1, maxY: 0});
 
     assert.throws( function(){gameState.createRandomBlobs("not number");},
                    /Number of blobs must be integer/);

@@ -18,16 +18,20 @@ var GameUI = function (context, canvas){
   this.xIncrementNumber = 20;
   //Add half, force to integer.
   this.xIncrementSize = (this.canvas.width / this.xIncrementNumber + 0.5) | 0;
+  this.xCoordinateDirection = +1;
 
   this.yIncrementNumber = 20;
   this.yIncrementSize = (this.canvas.width / this.yIncrementNumber + 0.5) | 0;
+  this.yCoordinateDirection = -1;
 
-  this.gameState = new GameState();
+  this.gameState = new GameState({minX: -10, maxX: 10, minY: -10, maxY: 10});
 
   this._drawGrid();
   this._drawAxises();
   this._drawIncrements();
 
+  this.gameState.createRandomBlobs(7);
+  console.log(this.gameState.getBlobs());
   this._drawBlobs();
 };
 
@@ -55,43 +59,43 @@ GameUI.prototype._drawIncrements = function () {
 
   while ( drawXIntervalPosition < this.canvas.width ) {
     this.context.moveTo( drawXIntervalPosition,
-      this.origin.y - this.yIncrementSize );
+      this.origin.y - Math.abs(this.yIncrementSize) );
     this.context.lineTo( drawXIntervalPosition,
-      this.origin.y + this.yIncrementSize );
+      this.origin.y + Math.abs(this.yIncrementSize) );
 
-    drawXIntervalPosition += this.xIncrementSize;
+    drawXIntervalPosition += Math.abs(this.xIncrementSize);
   }
 
   drawXIntervalPosition = this.origin.x;
 
   while ( drawXIntervalPosition > 0 ) {
     this.context.moveTo( drawXIntervalPosition,
-      this.origin.y - this.yIncrementSize );
+      this.origin.y - Math.abs(this.yIncrementSize) );
     this.context.lineTo( drawXIntervalPosition,
-      this.origin.y + this.yIncrementSize );
+      this.origin.y + Math.abs(this.yIncrementSize) );
 
     drawXIntervalPosition -= this.xIncrementSize;
   }
   var drawYIntervalPosition = this.origin.y;
 
   while ( drawYIntervalPosition < this.canvas.height ) {
-    this.context.moveTo( this.origin.x - this.xIncrementSize,
+    this.context.moveTo( this.origin.x - Math.abs(this.xIncrementSize),
       drawYIntervalPosition );
-    this.context.lineTo( this.origin.x + this.xIncrementSize,
+    this.context.lineTo( this.origin.x + Math.abs(this.xIncrementSize),
       drawYIntervalPosition );
 
-    drawYIntervalPosition += this.yIncrementSize;
+    drawYIntervalPosition += Math.abs(this.yIncrementSize);
   }
 
   var drawYIntervalPosition = this.origin.y;
 
   while ( drawYIntervalPosition > 0 ) {
-    this.context.moveTo( this.origin.x - this.xIncrementSize,
+    this.context.moveTo( this.origin.x - Math.abs(this.xIncrementSize),
        drawYIntervalPosition );
-    this.context.lineTo( this.origin.x + this.xIncrementSize,
+    this.context.lineTo( this.origin.x + Math.abs(this.xIncrementSize),
        drawYIntervalPosition );
 
-    drawYIntervalPosition -= this.yIncrementSize;
+    drawYIntervalPosition -= Math.abs(this.yIncrementSize);
   }
 
   this.context.strokeStyle = "rgb(200, 0, 100)";
@@ -143,5 +147,37 @@ GameUI.prototype._drawGrid = function () {
 };
 
 GameUI.prototype._drawBlobs = function () {
+  var blobs = this.gameState.getBlobs();
+
+  blobs.forEach(
+    function (blob) {
+      this.context.beginPath();
+      // thanks twitch.tv/SlashLife & github.com/SlashLife
+      // for helping with this section!
+      var radius_x = Math.abs(blob.radius * this.xIncrementSize);
+      var radius_y = Math.abs(blob.radius * this.yIncrementSize);
+      var center_x = blob.x * this.xCoordinateDirection *
+      this.xIncrementSize + this.origin.x;
+      var center_y = blob.y * this.yCoordinateDirection *
+      this.yIncrementSize + this.origin.y;
+
+      var left = center_x - radius_x;
+      var right = center_x + radius_x;
+      var top = center_y - radius_y;
+      var bottom = center_y + radius_y;
+
+      this.context.moveTo(center_x, top); // at north
+      // to east
+      this.context.arcTo(right, top, right, bottom, radius_x, radius_y);
+      // to south
+      this.context.arcTo(right, bottom, left, bottom,radius_x, radius_y);
+       // to west
+      this.context.arcTo(left, bottom, left, top, radius_x, radius_y);
+      // to north
+      this.context.arcTo(left, top, right, top, radius_x, radius_y);
+      this.context.fillStyle = "rgb(0,0,255)";
+      this.context.fill();
+    }.bind(this)
+  );
 
 };

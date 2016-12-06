@@ -1,3 +1,4 @@
+"use strict";
 var Blob = function (x, y, radius) {
   this.x = x;
   this.y = y;
@@ -12,9 +13,9 @@ Blob.prototype.hasHit = function ( checkX, checkY ) {
   return (pointDistance < this.radius);
 };
 
-var GameState = function () {
+var GameState = function (windowObj) {
   this._blobs = [];
-
+  this.setWindow(windowObj);
 };
 
 GameState.prototype.createBlobs = function (coordinateList) {
@@ -33,6 +34,10 @@ GameState.prototype.destroyBlobs = function () {
   this._blobs = [];
 };
 
+GameState.prototype.getBlobs = function () {
+  return this._blobs;
+};
+
 GameState.prototype.createRandomBlobs = function (blobsToCreate) {
   if (typeof blobsToCreate !== "number")
     throw "Number of blobs must be integer";
@@ -43,12 +48,34 @@ GameState.prototype.createRandomBlobs = function (blobsToCreate) {
   for (var i = 0; i < blobsToCreate; i++) {
     coordinates.push(
       [
-        Math.random() * (Math.abs(this._graphWindow.minX) +
-        Math.abs(this._graphWindow.minY))])
+        Math.random() *
+        (
+          this._graphWindow.maxX -
+          this._graphWindow.minX
+        ) + this._graphWindow.minX,
+        Math.random() *
+        (
+          this._graphWindow.maxY -
+          this._graphWindow.minY
+        ) + this._graphWindow.minY,
+      ]);
   }
+
+  this.createBlobs(coordinates);
 };
 
 GameState.prototype.setWindow = function (windowObj) {
+  var allNums;
+  for(var name in windowObj){
+    allNums = typeof windowObj[name] === "number";
+    allNums = allNums && ["minX", "maxX", "minY", "maxY"].includes(name);
+    if(!allNums) break;
+  }
+
+  if (!allNums)
+    throw "Not correct properties on window object." +
+    " Check types and that you have minX, maxX, minY, maxY.";
+
   if ((windowObj.minX >= windowObj.maxX) && (windowObj.minY >= windowObj.maxY))
     throw "minX must be less than maxX and minY must be less than maxY";
   if (windowObj.minX >= windowObj.maxX) throw "minX must be less than maxX";
