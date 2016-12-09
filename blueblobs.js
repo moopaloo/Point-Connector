@@ -2,6 +2,11 @@
 $(document).ready(function () {
   var canvas = $("canvas.MainGame")[0];
   var context = canvas.getContext("2d");
+  $("button#guess").click(function (event) {
+    event.preventDefault();
+    gameInstance.graph();
+  });
+
   var gameInstance = new GameUI(context, canvas);
 });
 
@@ -180,4 +185,44 @@ GameUI.prototype._drawBlobs = function () {
     }.bind(this)
   );
 
+};
+
+GameUI.prototype.screenToMathCoordinate = function (x, y) {
+  //Divide each pixel by the increment size to get fraction of math unit.
+  //Lots of objects created, potential memory hog.
+  return {
+    x: this.xCoordinateDirection * (x - this.origin.x) / this.xIncrementSize,
+    y: this.yCoordinateDirection * (y - this.origin.y) / this.yIncrementSize,
+  };
+};
+GameUI.prototype.graph = function () {
+  var myImageData = this.context.getImageData(
+    0, 0, // Left, and Top, respectively, of clipped region
+    this.canvas.width, this.canvas.height
+  );
+
+ var graph = new Graph(
+   "5^2 = (x-3)^2 + (y+3)^2",
+   1/this.xIncrementSize,
+   1/this.yIncrementSize
+ );
+ //Color (with Alpha) of graph drawing to screen.
+ var graphColor = [0, 255, 0, 128];
+
+ //imageData goes from left to right, then top to bottom, so we need to loop
+ // through rows slower than coloumns.
+  for (var screenY = 0; screenY < myImageData.height; screenY++) {
+    for (var screenX = 0; screenX < myImageData.width; screenX++) {
+      if ( graph.hasPoint( this.screenToMathCoordinate( screenX, screenY ) ) ) {
+        var location = screenY * myImageData.width * 4 + screenX * 4;
+        myImageData.data[location + 0] = graphColor[0]; //Red component
+        myImageData.data[location + 1] = graphColor[1]; //Green component
+        myImageData.data[location + 2] = graphColor[2]; //Blue component
+        myImageData.data[location + 3] = graphColor[3]; //Alpha component
+      }
+    }
+  }
+
+  //Put the new image data in the upper left corner.
+  this.context.putImageData(myImageData, 0, 0);
 };
