@@ -110,13 +110,225 @@ Graph.prototype.hasPoint = function (x, y) {
   //console.error("hasPoint() not yet implemented.");
   var atLeastMinimum = (
     Math.pow(5, 2) >=
-    Math.pow((x - this.xResolution / 2) - 3, 2) +
-    Math.pow((y - this.yResolution / 2) + 3, 2)
+    Math.pow((x)- 3, 2) +
+    Math.pow((y) + 3, 2)
   );
   var atMostMaximum = (
-    Math.pow(5,2) <=
-    Math.pow( (x + this.xResolution / 2) - 3, 2) +
-    Math.pow( (y + this.yResolution / 2) + 3, 2)
+    Math.pow(5 - (this.xResolution + this.yResolution),2) <=
+    Math.pow( (x) - 3, 2) +
+    Math.pow( (y) + 3, 2)
   );
+  /*var atLeastMinimum = (
+    y >= -Math.pow(x, 2)
+  );
+  var atMostMaximum = (
+    y - (this.xResolution + this.yResolution) <= -Math.pow(x, 2)
+  );*/
   return  atLeastMinimum && atMostMaximum;
 };
+
+var Equation = function Equation(equationString) {
+  if (typeof equationString !== "string")
+    throw "Equation necessary for processing.";
+  this._parseEquation(equationString);
+  this._parseExpressions();
+
+};
+
+Equation.prototype._parseExpressions = function () {
+  this.parsedExpressions = [];
+  this.expressions.forEach(function (expression) {
+
+  })
+};
+
+Equation.prototype._parseEquation = function (equationString) {
+  equationString = equationString.toLowerCase();
+
+  if (equationString.indexOf("x") == -1 || equationString.indexOf("y") == -1)
+    throw "Equation must relate x and y."
+
+  this.comparisonOperators = { "=" : [], "<": [], ">": [], "<=": [], ">=": []};
+  //Dynamically add keys to the RegExp for matching.
+  var comparisonOperatorsRegExp = new RegExp(
+    //Sort comparison operators by length, then join them to match longest first
+    Object.keys(this.comparisonOperators).sort(
+      function compare(a, b){
+        return Math.sign(b.length - a.length);
+      }
+    ).join("|")
+  );
+  var searchString = equationString;
+  this.expressions = [];
+
+  var lastMatchedLocation = -1;
+  //While there is a comparison happening
+  while ( (comparisonOperatorsRegExp).test(searchString) ) {
+    //Grab the matched operator.
+    var matchedOperator = searchString.match(comparisonOperatorsRegExp);
+    //Add it's location in the string to the object, plus
+    //the location of the current string in the general equation string
+    //plus one because length is 1 based, while indices are 0 based.
+    this.comparisonOperators[matchedOperator[0]].
+    push(matchedOperator.index + lastMatchedLocation + 1);
+    lastMatchedLocation = matchedOperator.index;
+    //add the expression to the list of expressions to evaluate
+    this.expressions.push(
+      searchString.substring(0, matchedOperator.index).trim()
+    );
+    //reevaluate only the new part of the string
+    searchString = searchString.substring(
+      matchedOperator.index + matchedOperator[0].length
+    );
+  }
+  //Push the last expression that has no comparisonOperators into expressions
+  this.expressions.push(searchString.trim());
+
+  //Make sure there's at least one comparison AND no expressions are blank
+  if ( this.expressions.length < 2 ||
+    this.expressions.reduce(
+      function (accumulator, arrayValue) {
+        //checks if previous string is empty or if current one is empty.
+        return accumulator || (arrayValue.length == 0);
+      },
+      false
+    )
+  ) throw "Equation must pose either an equality or inequality";
+};
+
+var Expression = function Expression(expressionString) {
+  if (typeof expressionString !== "string") throw "Expression must be specified";
+
+  this._compiledExpression = [];
+
+  this.orderOfBinaryOperations = {
+    "^": function exponent(a, b) {
+      Math.pow(b, a);
+    },
+    "*": function multiplication(a, b) {
+      return b * a;
+    },
+    "/": function division(a, b) {
+      return b / a;
+    },
+    "+": function addition(a, b) {
+      return b + a;
+    },
+    "-": function subtraction(a, b) {
+      return b - a;
+    }
+  };
+
+  this.orderOfUnaryOperations = {
+    "(": function parentheses() {
+      throw "Parentheses not implemented";
+    },
+    "+": function (a) {
+      return +a;
+    },
+    "-": function (a) {
+      return -a;
+    },
+    "sin": function sine(a) {
+      return Math.sin(a);
+    },
+    "cos": function cosine(a) {
+      return Math.cos("a");
+    }
+  }
+
+  //Base case for recursion: if there are no operations being applied to string,
+  //return the number or letter in a trimmed string
+
+if (
+    Object.keys(this.orderOfUnaryOperations).reduce(
+      function (collector, item) {
+        return collector && (expressionString.indexOf(item) === -1);
+      },
+      true
+    ) &&
+  Object.keys(this.orderOfBinaryOperations).reduce(
+    function (collector, item) {
+      return collector && (expressionString.indexOf(item) === -1);
+    },
+    true
+  )
+) {
+  this._compiledExpression.push(expressionString.trim());
+  return;
+}
+  //Split so that right, ex the minus is evaluated first 2x + 3 - 2
+  //That way when we break it apart the first term is evaluated first
+  var indexOfSymbol = -1; //Keep scope here so I can check if symbol is found.
+  var tempExpressionString = expressionString; //for processing string only
+  while (indexOfSymbol === -1){
+    indexOfSymbol = -1;
+
+    //unary first
+    .
+    reverse().forEach(
+      function (symbol) {
+
+
+
+      }.bind(this)
+    );
+
+    // Do binary after unary
+    Object.keys(this.orderOfBinaryOperations).
+    concat(Object.keys(this.orderOfUnaryOperations)).
+    reverse().forEach(function (symbol) {
+      //detect if is truly a unary symbol by encountering either
+      //the string boundary or a non-letter or non-number on the left
+      //and it not being a space
+      var isUnary = function (symbol, expressionString) {
+        var regions = expressionString.split(symbol);
+        //get one before last one
+        var testStr = regions[regions.length - 2].trim();
+        return testStr === "" || /[^A-z0-9]$/.test(expressionString);
+      };
+
+      currentIsUnary = isUnary(symbol, expressionString);
+      if (currentIsUnary){
+        //Don't execute of symbol is already found or isn't unary
+        if (indexOfSymbol > -1) return;
+        indexOfSymbol = tempExpressionString.lastIndexOf(symbol);
+        if (indexOfSymbol > -1) { //symbol has to exist
+          if (symbol === "(") {
+            var indexOfEndParens = tempExpressionString.lastIndexOf(")");
+            this._compiledExpression.concat(
+              new Expression(
+                tempExpressionString.substring(
+                  indexOfSymbol + symbol.length,
+                  indexOfEndParens
+                )
+              )._compiledExpression // Just evaluate stuff inside of parentheses
+            );
+            tempExpressionString = tempExpressionString.substring(indexOfSymbol);
+          } else {
+            this._compiledExpression.push("u" + symbol);
+            afterText = tempExpressionString.
+            split(symbol).pop().
+            match(/[A-z0-9]+/)[0];
+            this._compiledExpression.push(afterText);
+          }
+        }
+      } else {
+
+        if (indexOfSymbol > -1) return; //Don't execute of symbol is already found
+        indexOfSymbol = tempExpressionString.lastIndexOf(symbol);
+        if (indexOfSymbol > -1) { //symbol has to exist
+          this._compiledExpression.push(symbol);
+          this._compiledExpression.concat(
+            new Expression(
+              tempExpressionString.substring(indexOfSymbol + symbol.length)
+            )._compiledExpression
+          );
+          tempExpressionString = tempExpressionString.substring(indexOfSymbol);
+        }
+      }
+
+    }.bind(this));
+  }
+
+}

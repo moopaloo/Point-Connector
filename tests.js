@@ -149,3 +149,77 @@ QUnit.test(
     );
   }
 );
+
+QUnit.test(
+  "Equation() prototype object handles processing " +
+  "and compiling of equation and inequalities",
+  function ( assert ) {
+    assert.throws(
+      function(){
+        new Equation();
+      },
+      /Equation necessary for processing/
+    );
+    assert.throws(
+      function () {
+        new Equation("asdf");
+      },
+      /Equation must relate x and y/
+    );
+    assert.throws(
+      function () {
+      new Equation({});
+      },
+      /Equation necessary for processing/
+    );
+    assert.throws(
+      function () {
+        new Equation("xy");
+      },
+      /Equation must pose either an equality or inequality/
+    ); // no comparison sign
+    assert.throws(
+      function () {
+        new Equation("xy =");
+      },
+      /Equation must pose either an equality or inequality/
+    ); //nothing on right of expression
+
+    var simpleEquation = new Equation("x = y"); //Should work.
+    var complexInequality = new Equation("x > y <= 2"); //Should also work.
+
+    assert.deepEqual(
+      complexInequality.expressions,
+      ["x", "y", "2"],
+      "parses all of expressions"
+    );
+
+    assert.deepEqual(
+      complexInequality.comparisonOperators,
+      { "=" : [], "<": [], ">": [2], "<=": [6], ">=": []},
+      "assigns correct location for operators"
+    );
+  }
+);
+
+QUnit.test( "Expression() object: Do you even math?",
+  function ( assert ) {
+    assert.throws(function(){new Expression()}, /Expression must be specified/);
+
+    assert.deepEqual(
+      ( new Expression("1 + - 2 * 3 * -(-10 - 4) + 3") )._compiledExpression,
+      ["+", "3", "+", "*", "-", "-", "4",
+      "-", "10", "*", "3", "-", "2", "1"],
+      "order of operations"
+    );
+
+    assert.deepEqual(
+      ( new Expression("1 + - b * 3 * -(-a - 4) + 3") )._compiledExpression,
+      ["+", "3", "+", "*", "-", "-", "4",
+      "-", "a", "*", "3", "-", "b", "1"],
+      "variables"
+    );
+
+    new Expression("2x + 2"); //Implicit multiplication is okay.
+  }
+);
