@@ -324,8 +324,8 @@ if (
 
   this.entryPoint = null; //will hold first function to call in stack.
   // Do binary after unary
-  Object.keys(this.orderOfBinaryOperations).
-  concat(Object.keys(this.orderOfUnaryOperations)).
+  Object.keys(this.orderOfUnaryOperations).
+  concat(Object.keys(this.orderOfBinaryOperations)).
   reverse().forEach(function (symbol) {
   var indexOfSymbol = expressionString.lastIndexOf(symbol);
   //Don't eval any symbols in parens, the parens op. will do that!
