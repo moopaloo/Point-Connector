@@ -199,11 +199,18 @@ Equation.prototype._parseEquation = function (equationString) {
 var Expression = function Expression(expressionString) {
   if (typeof expressionString !== "string") throw "Expression must be specified";
 
+  if (expressionString.trim() === "") {
+    this.entryPoint = function(){return 0;}
+    return;
+  }
+
   this._compiledExpression = [];
+
+  this._compiledUnaryExpressions = [];
 
   this.orderOfBinaryOperations = {
     "^": function exponent(a, b) {
-      Math.pow(b, a);
+      return Math.pow(a, b);
     },
     "*": function multiplication(a, b) {
       return b * a;
@@ -233,12 +240,30 @@ var Expression = function Expression(expressionString) {
       return Math.sin(a);
     },
     "cos": function cosine(a) {
-      return Math.cos("a");
+      return Math.cos(a);
     }
   }
 
+
+  //remove single pair of parens if they are on the ends and end matches beginning as they don't matter.
+  expressionString = expressionString.trim();
+  if (/^\(.*\)$/.test(expressionString)) {
+    var leftUnmatched = 0; //error if goes below 0
+    var endIndex = [];
+    //Only two scenarios (()) and ()() to disambiguate bc recursion takes care of rest
+    expressionString.split("").forEach(function (char, index) {
+      if (char === "(") leftUnmatched++;
+      if (char === ")") leftUnmatched--;
+      if (leftUnmatched === 0) endIndex.push(index);
+    })
+    //get the first completed closure of () after beginning
+    if (endIndex[0] === expressionString.length - 1)
+    expressionString = expressionString.substring(1, expressionString.length - 1);
+  }
+
   //Base case for recursion: if there are no operations being applied to string,
-  //return the number or letter in a trimmed string
+  //return the number in a function that returns that number
+  // or letter in a function that takes a value for that variable as a parameter
 
 if (
     Object.keys(this.orderOfUnaryOperations).reduce(
@@ -254,45 +279,127 @@ if (
     true
   )
 ) {
-  this._compiledExpression.push(expressionString.trim());
+  expressionString = expressionString.trim();
+  if (/[A-z]/.test(expressionString)){
+    this.entryPoint = function (variablesObj) {
+      return variablesObj[expressionString];
+    }
+  } else {
+    this.entryPoint = function () {
+      return parseFloat(expressionString);
+    }
+  }
   return;
 }
   //Split so that right, ex the minus is evaluated first 2x + 3 - 2
   //That way when we break it apart the first term is evaluated first
-  var indexOfSymbol = -1; //Keep scope here so I can check if symbol is found.
+//  var indexOfSymbol = -1; //Keep scope here so I can check if symbol is found.
   var tempExpressionString = expressionString; //for processing string only
-  while (indexOfSymbol === -1){
+  var isUnary = function (symbol, expressionString) {
+    var regions = expressionString.split(symbol);
+    //Regions will be <2 only if it's not found, so it's not unary.
+    if (regions.length < 2) return false;
+    //get one before last one
+    var testStr = regions[regions.length - 2].trim();
+    return testStr === "" || /[^A-z0-9()]$/.test(expressionString);
+  };
+
+
+  var isInParens = function (indexOfLocation, expressionString) {
+    var openParensBefore = 0;
+    var openParensAfter = 0;
+    var before = expressionString.substring(0, indexOfLocation - 1);
+    var after = expressionString.substring(indexOfLocation + 1);
+    before.split("").forEach(function (letter) {
+      if (letter === "(") ++openParensBefore;
+      if (letter === ")") --openParensBefore;
+    });
+    after.split("").forEach(function (letter) {
+      if (letter === "(") ++openParensAfter;
+      if (letter === ")") --openParensAfter;
+    });
+
+    return !(openParensBefore === 0 && openParensAfter === 0);
+  }
+
+  this.entryPoint = null; //will hold first function to call in stack.
+  // Do binary after unary
+  Object.keys(this.orderOfBinaryOperations).
+  concat(Object.keys(this.orderOfUnaryOperations)).
+  reverse().forEach(function (symbol) {
+  var indexOfSymbol = expressionString.lastIndexOf(symbol);
+  //Don't eval any symbols in parens, the parens op. will do that!
+
+  if (indexOfSymbol > -1)
+  if (isInParens(indexOfSymbol, expressionString)) return;
+    if (isUnary(symbol, expressionString)) {
+      if (/\(/.test(symbol)){
+        this.entryPoint = function (variablesObj) {
+          return (new Expression(
+            expressionString.substring(
+              expressionString.indexOf("(") + 1,
+              expressionString.indexOf(")")
+            )).evaluate(variablesObj)) +
+            (new Expression(
+              expressionString.substring(
+                expressionString.indexOf(")") + 1
+              )
+            ).evaluate(variablesObj));
+        }
+      } else {
+        this.entryPoint = function (variablesObj) {
+          return this.orderOfUnaryOperations[symbol](
+            (new Expression(
+            expressionString.substring(indexOfSymbol + symbol.length)
+          )).evaluate(variablesObj));
+        };
+      }
+    } else {
+      this.entryPoint = function(variablesObj) {
+        return this.orderOfBinaryOperations[symbol](
+          (new Expression(
+            expressionString.substring(0, indexOfSymbol)
+          )).evaluate(variablesObj),
+          (new Expression(
+            expressionString.substring(indexOfSymbol + symbol.length)
+          )).evaluate(variablesObj)
+        );
+      };
+    }
+    return;
+  }.bind(this));
+
+  // console.log(this.entryPoint);
+
+  /*while (indexOfSymbol === -1){
     indexOfSymbol = -1;
 
-    //unary first
-    .
-    reverse().forEach(
-      function (symbol) {
 
-
-
-      }.bind(this)
-    );
-
+    var isInParens = function (indexOfLocation, expressionString) {
+      return indexOfLocation > expressionString.indexOf("(") &&
+        indexOfLocation < expressionString.lastIndexOf(")");
+    }
     // Do binary after unary
     Object.keys(this.orderOfBinaryOperations).
     concat(Object.keys(this.orderOfUnaryOperations)).
     reverse().forEach(function (symbol) {
+
+
       //detect if is truly a unary symbol by encountering either
       //the string boundary or a non-letter or non-number on the left
       //and it not being a space
-      var isUnary = function (symbol, expressionString) {
-        var regions = expressionString.split(symbol);
-        //get one before last one
-        var testStr = regions[regions.length - 2].trim();
-        return testStr === "" || /[^A-z0-9]$/.test(expressionString);
-      };
+      this.unaryCount = 0;
+      var currentIsUnary = isUnary(symbol, expressionString);
+      //Don't execute of symbol is already found
+      if (indexOfSymbol > -1) return;
+      indexOfSymbol = tempExpressionString.lastIndexOf(symbol);
+      //Symbol will be evaluated in nested expression, so not now
+      if (isInParens(indexOfSymbol, expressionString)) {
+        indexOfSymbol = -1;
+        return;
+      }
 
-      currentIsUnary = isUnary(symbol, expressionString);
       if (currentIsUnary){
-        //Don't execute of symbol is already found or isn't unary
-        if (indexOfSymbol > -1) return;
-        indexOfSymbol = tempExpressionString.lastIndexOf(symbol);
         if (indexOfSymbol > -1) { //symbol has to exist
           if (symbol === "(") {
             var indexOfEndParens = tempExpressionString.lastIndexOf(")");
@@ -306,17 +413,16 @@ if (
             );
             tempExpressionString = tempExpressionString.substring(indexOfSymbol);
           } else {
-            this._compiledExpression.push("u" + symbol);
+            //Increment unary count and push the value as a symbol.
+            this._compiledExpression.push("u" + ++this.unaryCount);
             afterText = tempExpressionString.
             split(symbol).pop().
             match(/[A-z0-9]+/)[0];
-            this._compiledExpression.push(afterText);
+
+            this._compiledUnaryExpressions.push(new Expression(afterText));
           }
         }
       } else {
-
-        if (indexOfSymbol > -1) return; //Don't execute of symbol is already found
-        indexOfSymbol = tempExpressionString.lastIndexOf(symbol);
         if (indexOfSymbol > -1) { //symbol has to exist
           this._compiledExpression.push(symbol);
           this._compiledExpression.concat(
@@ -329,6 +435,10 @@ if (
       }
 
     }.bind(this));
-  }
+  }*/
 
 }
+
+Expression.prototype.evaluate = function (variablesObj) {
+  return this.entryPoint(variablesObj);
+};
