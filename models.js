@@ -162,7 +162,7 @@ Equation.prototype._parseEquation = function (equationString) {
   this.expressions = [];
 
   var lastMatchedLocation = -1;
-  //While there is a comparison happening
+  //While there is a comparison happeningi
   while ( (comparisonOperatorsRegExp).test(searchString) ) {
     //Grab the matched operator.
     var matchedOperator = searchString.match(comparisonOperatorsRegExp);
@@ -265,32 +265,32 @@ var Expression = function Expression(expressionString) {
   //return the number in a function that returns that number
   // or letter in a function that takes a value for that variable as a parameter
 
-if (
-    Object.keys(this.orderOfUnaryOperations).reduce(
+  if (
+      Object.keys(this.orderOfUnaryOperations).reduce(
+        function (collector, item) {
+          return collector && (expressionString.indexOf(item) === -1);
+        },
+        true
+      ) &&
+    Object.keys(this.orderOfBinaryOperations).reduce(
       function (collector, item) {
         return collector && (expressionString.indexOf(item) === -1);
       },
       true
-    ) &&
-  Object.keys(this.orderOfBinaryOperations).reduce(
-    function (collector, item) {
-      return collector && (expressionString.indexOf(item) === -1);
-    },
-    true
-  )
-) {
-  expressionString = expressionString.trim();
-  if (/[A-z]/.test(expressionString)){
-    this.entryPoint = function (variablesObj) {
-      return variablesObj[expressionString];
+    )
+  ) {
+    expressionString = expressionString.trim();
+    if (/[A-z]/.test(expressionString)){
+      this.entryPoint = function (variablesObj) {
+        return variablesObj[expressionString];
+      }
+    } else {
+      this.entryPoint = function () {
+        return parseFloat(expressionString);
+      }
     }
-  } else {
-    this.entryPoint = function () {
-      return parseFloat(expressionString);
-    }
+    return;
   }
-  return;
-}
   //Split so that right, ex the minus is evaluated first 2x + 3 - 2
   //That way when we break it apart the first term is evaluated first
 //  var indexOfSymbol = -1; //Keep scope here so I can check if symbol is found.
@@ -301,7 +301,7 @@ if (
     if (regions.length < 2) return false;
     //get one before last one
     var testStr = regions[regions.length - 2].trim();
-    return testStr === "" || /[^A-z0-9()]$/.test(expressionString);
+    return testStr === "" || /[^A-z0-9]$/.test(testStr);
   };
 
 
@@ -326,49 +326,54 @@ if (
   // Do binary after unary
   Object.keys(this.orderOfUnaryOperations).
   concat(Object.keys(this.orderOfBinaryOperations)).
-  reverse().forEach(function (symbol) {
-  var indexOfSymbol = expressionString.lastIndexOf(symbol);
-  //Don't eval any symbols in parens, the parens op. will do that!
+  reverse().forEach(
+    function (symbol) {
+      var indexOfSymbol = expressionString.lastIndexOf(symbol);
+      //Don't eval any symbols in parens, the parens op. will do that!
 
-  if (indexOfSymbol > -1)
-  if (isInParens(indexOfSymbol, expressionString)) return;
-    if (isUnary(symbol, expressionString)) {
-      if (/\(/.test(symbol)){
-        this.entryPoint = function (variablesObj) {
-          return (new Expression(
-            expressionString.substring(
-              expressionString.indexOf("(") + 1,
-              expressionString.indexOf(")")
-            )).evaluate(variablesObj)) +
-            (new Expression(
-              expressionString.substring(
-                expressionString.indexOf(")") + 1
-              )
-            ).evaluate(variablesObj));
+      //if we found a symbol we shouldn't check other symbols
+      if (indexOfSymbol > -1) {
+        if (isInParens(indexOfSymbol, expressionString)) return;
+        if (isUnary(symbol, expressionString)) {
+          if (/\(/.test(symbol)){
+            this.entryPoint = function (variablesObj) {
+              return (new Expression(
+                expressionString.substring(
+                  expressionString.indexOf("(") + 1,
+                  expressionString.indexOf(")")
+                )).evaluate(variablesObj)) +
+                (new Expression(
+                  expressionString.substring(
+                    expressionString.indexOf(")") + 1
+                  )
+                ).evaluate(variablesObj));
+            }
+          } else {
+            this.entryPoint = function (variablesObj) {
+              return this.orderOfUnaryOperations[symbol](
+                (new Expression(
+                expressionString.substring(indexOfSymbol + symbol.length)
+              )).evaluate(variablesObj));
+            };
+          }
+        } else {
+          this.entryPoint = function(variablesObj) {
+            // if expression isn't unary,
+            // then we pass the fn it represents the two sides
+            return this.orderOfBinaryOperations[symbol](
+              (new Expression(
+                expressionString.substring(0, indexOfSymbol)
+              )).evaluate(variablesObj),
+              (new Expression(
+                expressionString.substring(indexOfSymbol + symbol.length)
+              )).evaluate(variablesObj)
+            );
+          };
         }
-      } else {
-        this.entryPoint = function (variablesObj) {
-          return this.orderOfUnaryOperations[symbol](
-            (new Expression(
-            expressionString.substring(indexOfSymbol + symbol.length)
-          )).evaluate(variablesObj));
-        };
       }
-    } else {
-      this.entryPoint = function(variablesObj) {
-        return this.orderOfBinaryOperations[symbol](
-          (new Expression(
-            expressionString.substring(0, indexOfSymbol)
-          )).evaluate(variablesObj),
-          (new Expression(
-            expressionString.substring(indexOfSymbol + symbol.length)
-          )).evaluate(variablesObj)
-        );
-      };
-    }
-    return;
-  }.bind(this));
-
+  }.bind(this)
+);
+//{
   // console.log(this.entryPoint);
 
   /*while (indexOfSymbol === -1){
@@ -435,8 +440,8 @@ if (
       }
 
     }.bind(this));
-  }*/
-
+  }}*/
+if (!this.entryPoint) throw "No EntryPoint exception";
 }
 
 Expression.prototype.evaluate = function (variablesObj) {
