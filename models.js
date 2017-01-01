@@ -108,7 +108,7 @@ Graph.prototype.hasPoint = function (x, y) {
   }
   //TODO: Implement evaluation for any equation.
   //console.error("hasPoint() not yet implemented.");
-  var atLeastMinimum = (
+  /*var atLeastMinimum = (
     Math.pow(5, 2) >=
     Math.pow((x)- 3, 2) +
     Math.pow((y) + 3, 2)
@@ -117,13 +117,16 @@ Graph.prototype.hasPoint = function (x, y) {
     Math.pow(5 - (this.xResolution + this.yResolution),2) <=
     Math.pow( (x) - 3, 2) +
     Math.pow( (y) + 3, 2)
-  );
+  );*/
   /*var atLeastMinimum = (
     y >= -Math.pow(x, 2)
   );
   var atMostMaximum = (
     y - (this.xResolution + this.yResolution) <= -Math.pow(x, 2)
   );*/
+
+  var atLeastMinimum = ( y >= -Math.sin(x * Math.PI) * x * x);
+  var atMostMaximum = ( true );
   return  atLeastMinimum && atMostMaximum;
 };
 
@@ -222,7 +225,7 @@ var Expression = function Expression(expressionString) {
       return b + a;
     },
     "-": function subtraction(a, b) {
-      return b - a;
+      return a - b;
     }
   };
 
