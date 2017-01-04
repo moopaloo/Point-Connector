@@ -202,7 +202,7 @@ GameUI.prototype.graph = function () {
   );
 
  var graph = new Graph(
-   "5^2 = (x-3)^2 + (y+3)^2",
+   $("#equation").val(),
    1/this.xIncrementSize,
    1/this.yIncrementSize
  );

@@ -96,7 +96,8 @@ var Graph = function (expression, xResolution, yResolution) {
 Graph.prototype._compileExpression =
 function (expression) {
   // TODO: precompile expression for easy rendering.
-  console.error("compileExpression() is not yet implemented");
+  this.equation = new Equation(expression);
+  // console.error("compileExpression() is not yet implemented");
 };
 
 Graph.prototype.hasPoint = function (x, y) {
@@ -106,27 +107,32 @@ Graph.prototype.hasPoint = function (x, y) {
     y = x.y; //Use y component of object as y
     x = x.x; //Use x component of object as x
   }
-  //TODO: Implement evaluation for any equation.
-  //console.error("hasPoint() not yet implemented.");
-  /*var atLeastMinimum = (
-    Math.pow(5, 2) >=
-    Math.pow((x)- 3, 2) +
-    Math.pow((y) + 3, 2)
+  //make sure all conditions are met
+  var atLeastMinimum = this.equation.comparisonSequence.reduce(
+    function (before, comparison, index) {
+      var expression1 = this.equation.parsedExpressions[index];
+      var expression2 = this.equation.parsedExpressions[index + 1];
+      return before && comparison(
+        expression1.evaluate({x: x, y: y }),
+        expression2.evaluate({x: x, y: y })
+      );
+    }.bind(this),
+    true
   );
-  var atMostMaximum = (
-    Math.pow(5 - (this.xResolution + this.yResolution),2) <=
-    Math.pow( (x) - 3, 2) +
-    Math.pow( (y) + 3, 2)
-  );*/
-  /*var atLeastMinimum = (
-    y >= -Math.pow(x, 2)
-  );
-  var atMostMaximum = (
-    y - (this.xResolution + this.yResolution) <= -Math.pow(x, 2)
-  );*/
 
-  var atLeastMinimum = ( y >= -Math.sin(x * Math.PI) * x * x);
-  var atMostMaximum = ( true );
+  var atMostMaximum = this.equation.comparisonSequence.reduce(
+    function (before, comparison, index) {
+      var expression1 = this.equation.parsedExpressions[index];
+      var expression2 = this.equation.parsedExpressions[index + 1];
+      return before && comparison(
+        expression1.evaluate({x: x + this.xResolution, y: y + this.yResolution }),
+        expression2.evaluate({x: x + this.xResolution, y: y + this.yResolution })
+      );
+    }.bind(this),
+    true
+  );
+  // var atLeastMinimum = ( y >= -Math.sin(x * Math.PI) * x * x);
+  // var atMostMaximum = ( true );
   return  atLeastMinimum && atMostMaximum;
 };
 
@@ -141,8 +147,8 @@ var Equation = function Equation(equationString) {
 Equation.prototype._parseExpressions = function () {
   this.parsedExpressions = [];
   this.expressions.forEach(function (expression) {
-
-  })
+    this.parsedExpressions.push(new Expression(expression));
+  }.bind(this))
 };
 
 Equation.prototype._parseEquation = function (equationString) {
@@ -151,7 +157,14 @@ Equation.prototype._parseEquation = function (equationString) {
   if (equationString.indexOf("x") == -1 || equationString.indexOf("y") == -1)
     throw "Equation must relate x and y."
 
-  this.comparisonOperators = { "=" : [], "<": [], ">": [], "<=": [], ">=": []};
+  this.comparisonOperators = {
+    "=" : function (a, b) { return a === b; },
+    "<": function (a, b) { return a < b; },
+    ">": function (a, b) { return a > b; },
+    "<=": function (a, b) { return a <= b; },
+    ">=": function (a, b) { return a >= b; }
+  };
+  this.comparisonSequence = [];
   //Dynamically add keys to the RegExp for matching.
   var comparisonOperatorsRegExp = new RegExp(
     //Sort comparison operators by length, then join them to match longest first
@@ -172,8 +185,9 @@ Equation.prototype._parseEquation = function (equationString) {
     //Add it's location in the string to the object, plus
     //the location of the current string in the general equation string
     //plus one because length is 1 based, while indices are 0 based.
-    this.comparisonOperators[matchedOperator[0]].
-    push(matchedOperator.index + lastMatchedLocation + 1);
+    this.comparisonSequence.push(
+      this.comparisonOperators[matchedOperator[0]]
+    );
     lastMatchedLocation = matchedOperator.index;
     //add the expression to the list of expressions to evaluate
     this.expressions.push(
@@ -299,7 +313,7 @@ var Expression = function Expression(expressionString) {
 //  var indexOfSymbol = -1; //Keep scope here so I can check if symbol is found.
   var tempExpressionString = expressionString; //for processing string only
   var isUnary = function (symbol, expressionString) {
-    var regions = expressionString.split(symbol);
+    var regions = expressionString.split(symbol, 1);
     //Regions will be <2 only if it's not found, so it's not unary.
     if (regions.length < 2) return false;
     //get one before last one
